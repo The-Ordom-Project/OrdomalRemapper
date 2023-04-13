@@ -24,6 +24,10 @@ dependencies {
 }
 
 tasks.test {
+    // remap test jar.
+    // we need to translate it so that it can be load in forge environment.
+    dependsOn("fabric-mod-test:remapJar")
+
     useJUnitPlatform()
 }
 
