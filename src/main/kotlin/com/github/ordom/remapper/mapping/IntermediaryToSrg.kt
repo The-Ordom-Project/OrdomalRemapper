@@ -16,6 +16,7 @@ class IntermediaryToSrg(
     private val intermediary: Intermediary,
     private val srg: Srg
 ) {
+    @Suppress("NAME_SHADOWING")
     fun merge(): TinyTree {
         intermediary.download()
         srg.download()
