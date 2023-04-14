@@ -1,5 +1,6 @@
 package com.github.ordom.remapper.mapping
 
+import com.github.ordom.remapper.INTERMEDIARY
 import net.fabricmc.mapping.tree.TinyMappingFactory
 import net.fabricmc.mapping.tree.TinyTree
 import org.slf4j.LoggerFactory
@@ -19,7 +20,7 @@ class Intermediary(
 ): MappingProvider
 {
     override val LOGGER = LoggerFactory.getLogger("Ordomal Intermediary Mapping")
-    override val path = gameDir / ".ordomal" / "mappings" / "intermediary" / "intermediary-$version-v2.jar"
+    override val path = gameDir / ".ordomal" / "mappings" / INTERMEDIARY / "intermediary-$version-v2.jar"
     override val url = "https://maven.fabricmc.net/net/fabricmc/intermediary/$version/intermediary-$version-v2.jar"
     override val shaUrl = "$url.sha1"
     override fun load(): TinyTree {

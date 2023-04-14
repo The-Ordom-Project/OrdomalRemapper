@@ -1,5 +1,7 @@
 package com.github.ordom.remapper.transformer
 
+import com.github.ordom.remapper.INTERMEDIARY
+import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.VERSION
 import com.github.ordom.remapper.mapping.IntermediaryToSrg
 import com.github.ordom.remapper.mapping.tsrg.SignatureTranslator
@@ -20,11 +22,11 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.*
 
-private typealias strM<T> = MutableMap<String, T>
+private typealias strM<T> = Map<String, T>
 
 @Serializable
 private data class FabricRefMap(
-    val mapping: strM<strM<String>>? = null,
+    val mappings: strM<strM<String>>? = null,
     val data: strM<strM<strM<String>>>? = null,
 )
 
@@ -40,13 +42,13 @@ class BytecodeRemapper(
 ) {
     private val mapping = i2s.merge()
     val remapper: TinyRemapper = TinyRemapper.newRemapper()
-        .withMappings(TinyRemapperMappingsHelper.create(mapping, "intermediary", "srg", false))
+        .withMappings(TinyRemapperMappingsHelper.create(mapping, INTERMEDIARY, SEARGE, false))
         .build()
 
     @OptIn(ExperimentalPathApi::class)
-    fun remap(jarFile: Path, deleteTmp: Boolean = true): Path {
-        val path = Path.of("run", "out", "${jarFile.nameWithoutExtension}-remapped")
-        path.parent.createDirectories()
+    fun remap(outputPath: Path, jarFile: Path, deleteTmp: Boolean = true): Path {
+        val path = outputPath / "${jarFile.nameWithoutExtension}-remapped"
+        outputPath.createDirectories()
         path.deleteRecursively()
 
         val translator = SignatureTranslator(mapping)
@@ -147,20 +149,23 @@ class BytecodeRemapper(
         }.joinToString("")
 
     private fun mapToSrg(mixinRefMap: FabricRefMap, translator: SignatureTranslator): FabricRefMap {
-        val copy = mixinRefMap.copy()
-        copy.mapping?.forEach { (_, map) ->
-            map.keys.forEach { s ->
-                map[s] = translator.translate(map[s]!!, "srg")
-            }
-        }
-        copy.data?.forEach { (_, map1) ->
-            map1.forEach { (_, map2) ->
-                map2.keys.forEach { s ->
-                    map2[s] = translator.translate(map2[s]!!, "srg")
-                }
-            }
-        }
-        return copy
+        val mappings = mixinRefMap.mappings?.map { (mixinClass, map) ->
+            mixinClass to map.map { (mixinRef, inter) ->
+                val newInter = translator.translate(inter, SEARGE)
+                mixinRef to newInter
+            }.toMap()
+        }?.toMap()
+        val data = mixinRefMap.data?.map { (namespace, map1) ->
+            if (namespace != "named:intermediary")
+                error("Unknown namespace key: $namespace")
+            SEARGE to map1.map { (mixinClass, map2) ->
+                val newMap = map2.map { (mixinRef, inter) ->
+                    mixinRef to translator.translate(inter, SEARGE)
+                }.toMap()
+                mixinClass to newMap
+            }.toMap()
+        }?.toMap()
+        return mixinRefMap.copy(mappings = mappings, data = data)
     }
 }
 

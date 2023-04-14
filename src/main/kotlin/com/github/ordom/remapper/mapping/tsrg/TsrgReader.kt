@@ -1,5 +1,7 @@
 package com.github.ordom.remapper.mapping.tsrg
 
+import com.github.ordom.remapper.OFFICIAL_OBSFUCATED
+import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.VERSION
 import net.fabricmc.mapping.reader.v2.TinyMetadata
 import java.io.BufferedReader
@@ -8,7 +10,7 @@ import java.io.BufferedReader
 internal val TSRG2TINY_METADATA: TinyMetadata = object : TinyMetadata {
     override fun getMajorVersion() = 2
     override fun getMinorVersion() = 0
-    override fun getNamespaces() = listOf("official", "srg")
+    override fun getNamespaces() = listOf(OFFICIAL_OBSFUCATED, SEARGE)
     override fun getProperties(): MutableMap<String, String?> = mutableMapOf(
         "srg_version" to "tsrg2",
         "ordomal_version" to VERSION

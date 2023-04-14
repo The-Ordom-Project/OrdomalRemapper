@@ -1,5 +1,7 @@
 package com.github.zly2006.fabricmodtest.mixin;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -28,5 +30,11 @@ public class MainScreenMixin extends Screen {
         this.addRenderableWidget(Button.builder(Component.translatable("menu.quit"), (button) -> {
             this.minecraft.stop();
         }).bounds(this.width / 2 + 2, 0, 98, 20).build());
+    }
+
+    @Inject(at = @At("RETURN"), method = "render")
+    private void render(PoseStack poseStack, int mouseX, int mouseY, float p_96742_, CallbackInfo ci) {
+        Minecraft.getInstance().font.draw(poseStack, "Mixin works!!!", 10, 10, 0xffffff);
+        System.out.println("Mixin works!!!");
     }
 }

@@ -1,5 +1,6 @@
 package com.github.ordom.remapper.mapping
 
+import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.mapping.tsrg.TsrgReader
 import net.fabricmc.mapping.tree.TinyTree
 import org.slf4j.LoggerFactory
@@ -14,7 +15,7 @@ class Srg(
 ): MappingProvider {
     override val LOGGER = LoggerFactory.getLogger("Ordomal SRG Mapping")
     private val metadataUrl = "https://maven.minecraftforge.net/de/oceanlabs/mcp/mcp_config/maven-metadata.xml"
-    override val path = gameDir / ".ordomal" / "mappings" / "srg" / "mcp-config-$version-v2.zip"
+    override val path = gameDir / ".ordomal" / "mappings" / SEARGE / "mcp-config-$version-v2.zip"
     override val url = "https://maven.minecraftforge.net/de/oceanlabs/mcp/mcp_config/$version/mcp_config-$version.zip"
     override val shaUrl = "$url.sha1"
 

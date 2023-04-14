@@ -1,5 +1,6 @@
 package com.github.ordom.remapper.mapping
 
+import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.mapping.tsrg.SignatureTranslator
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
@@ -18,11 +19,11 @@ class IntermediaryToSrgTest {
         val tree = i2s.merge()
         for (i in 0..100) {
             tree.classes.randomOrNull()?.methods?.randomOrNull()?.let {
-                assertFalse { containsFabricClass(it.getDescriptor("srg")) }
+                assertFalse { containsFabricClass(it.getDescriptor(SEARGE)) }
             }
         }
         val translator = SignatureTranslator(tree)
-        val methodSig = translator.mapMethodWithOwner("Lnet/minecraft/class_442;method_25426()V", "srg")
+        val methodSig = translator.mapMethodWithOwner("Lnet/minecraft/class_442;method_25426()V", SEARGE)
             ?: fail("No method mapping found")
         assertFalse { containsFabricClass(methodSig) }
     }
