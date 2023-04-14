@@ -1,0 +1,32 @@
+package com.github.zly2006.fabricmodtest.mixin;
+
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.network.chat.Component;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(TitleScreen.class)
+public class MainScreenMixin extends Screen {
+    protected MainScreenMixin(Component component) {
+        super(component);
+    }
+
+    static {
+        System.out.println("Hello Fabric, Hello Mixin!");
+        System.out.println("Powered by Ordom.(Should this work?)");
+    }
+
+    @Inject(at = @At("HEAD"), method = "init")
+    private void init(CallbackInfo info) {
+        System.out.println("Hello Fabric, Hello Mixin!");
+        System.out.println("Powered by Ordom.");
+
+        this.addRenderableWidget(Button.builder(Component.translatable("menu.quit"), (button) -> {
+            this.minecraft.stop();
+        }).bounds(this.width / 2 + 2, 0, 98, 20).build());
+    }
+}

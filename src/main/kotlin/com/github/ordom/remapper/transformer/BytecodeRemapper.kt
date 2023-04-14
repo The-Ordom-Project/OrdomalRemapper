@@ -1,5 +1,6 @@
 package com.github.ordom.remapper.transformer
 
+import com.github.ordom.remapper.VERSION
 import com.github.ordom.remapper.mapping.IntermediaryToSrg
 import com.github.ordom.remapper.mapping.tsrg.SignatureTranslator
 import com.github.ordom.remapper.metadata.FabricMetadata
@@ -53,45 +54,58 @@ class BytecodeRemapper(
             .build()
         remapper.readInputs(jarFile)
         remapper.apply(output)
+
         output.addNonClassFiles(jarFile, NonClassCopyMode.FIX_META_INF, remapper)
         // remap mixins classes
-        FabricMetadata.fromJson(path / "fabric.mod.json").mixins.asSequence()
+        val mixinConfigs = FabricMetadata.fromJson(path / "fabric.mod.json").mixins
+        mixinConfigs.asSequence()
             .map { FabricMetadata.MixinConfig.fromJson(path / it) }
             .map { (path / it.refMap).toFile() }
             .map { it to it.readText() }
             .mapValues { JSON.decodeFromString(FabricRefMap.serializer(), it) }
-            .mapValues {
-                it.mapping?.forEach { (_, map) ->
-                    map.keys.forEach { s ->
-                        map[s] = translator.translate(map[s]!!, "srg")
-                    }
-                }
-                it.data?.forEach { (_, map1) ->
-                    map1.forEach { (_, map2) ->
-                        map2.keys.forEach { s ->
-                            map2[s] = translator.translate(map2[s]!!, "srg")
-                        }
-                    }
-                }
-                it
-            }.mapValues {
-                JSON.encodeToString(FabricRefMap.serializer(), it)
-            }.forEach { it.first.writeText(it.second) }
+            .mapValues { mapToSrg(it, translator) }
+            .mapValues { JSON.encodeToString(FabricRefMap.serializer(), it) }
+            .forEach { it.first.writeText(it.second) }
+
         // generate forge meta
         val forgePackMeta = ForgePackMeta(ForgePackMeta.PackMeta.MC1194) // todo: detect version
         path / "pack.mcmeta" writeText forgePackMeta.toString()
         // generate forge toml
-        val forgeMetadata = ForgeMetadata()
+        val forgeMetadata = ForgeMetadata(
+            modid = "ordom_forge",
+            version = "0.1",
+            name = "OrdomForge",
+            description = "Generated from fabric",
+            license = "LGPL-2.1",
+        ) // todo: parse from fabric.mod.json
         path / "META-INF" / "mods.toml" writeText """
             modLoader = "javafml"
             loaderVersion = "[45,)"
-            license = "LGPL-2.1"
+            license = "${forgeMetadata.license}"
             [[mods]]
-            modId = "ordom_forge"
-            version = "0.1"
-            displayName = "OrdomForge"
-            description = "Generated from fabric"
+            modId = "${forgeMetadata.modid}"
+            version = "${forgeMetadata.version}"
+            displayName = "${forgeMetadata.name}"
+            description = "${encode(forgeMetadata.description)}\nGenerated from fabric by OrdomRemapper"
         """.trimIndent()
+
+        // aad info to manifest
+        val manifest = (path / "META-INF" / "MANIFEST.MF").toFile()
+        manifest.appendText("""
+            MixinConfigs: ${mixinConfigs.joinToString(",")}
+            Specification-Title: ${forgeMetadata.modid}
+            Specification-Version: 1
+            Implementation-Title: ${forgeMetadata.name}
+            Implementation-Version: ${forgeMetadata.version}
+            Mod-Translator: Ordom
+            X-Ordomal-Remapped: true
+            X-Ordomal-Origin-Mod: ${jarFile.name}
+            X-Ordomal-Remapped-Mod: ${jarFile.nameWithoutExtension}-remapped.jar
+            X-Ordomal-Remapped-Mod-Id: ordom_forge
+            X-Ordomal-Remapped-Mod-Version: 0.1
+            X-Ordomal-Version: $VERSION
+        """.trimIndent())
+
         // generate forge mod class
         val asm = ClassWriter(0)
         asm.visit(61, Opcodes.ACC_PUBLIC, "ordom/remapped/ordom_forge", null, "java/lang/Object", null)
@@ -124,6 +138,29 @@ class BytecodeRemapper(
             path.deleteRecursively()
         }
         return path
+    }
+
+    private fun encode(s: String): String =
+        s.map {
+            if (it.code in 0..31 || it.code >= 127) "\\u${it.code.toString(16).padStart(4, '0')}"
+            else it
+        }.joinToString("")
+
+    private fun mapToSrg(mixinRefMap: FabricRefMap, translator: SignatureTranslator): FabricRefMap {
+        val copy = mixinRefMap.copy()
+        copy.mapping?.forEach { (_, map) ->
+            map.keys.forEach { s ->
+                map[s] = translator.translate(map[s]!!, "srg")
+            }
+        }
+        copy.data?.forEach { (_, map1) ->
+            map1.forEach { (_, map2) ->
+                map2.keys.forEach { s ->
+                    map2[s] = translator.translate(map2[s]!!, "srg")
+                }
+            }
+        }
+        return copy
     }
 }
 

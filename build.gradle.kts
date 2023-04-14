@@ -4,7 +4,7 @@ plugins {
     application
 }
 
-group = "org.example"
+group = "com.github.ordom"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -40,6 +40,11 @@ tasks.test {
 
 kotlin {
     jvmToolchain(17)
+    sourceSets {
+        main {
+
+        }
+    }
 }
 
 application {
