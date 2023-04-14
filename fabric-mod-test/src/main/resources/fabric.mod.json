@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "fabric-mod-test",
+  "version": "${version}",
+  "name": "fabric-mod-test",
+  "description": "",
+  "authors": [],
+  "contact": {
+    "repo": "https://github.com/The-Ordom-Project/OrdomRemapper"
+  },
+  "license": "unlicense",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.github.zly2006.fabricmodtest.client.FabricModTestClient"
+    ],
+    "main": [
+      "com.github.zly2006.fabricmodtest.FabricModTest"
+    ]
+  },
+  "mixins": [
+    "fabric-mod-test.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

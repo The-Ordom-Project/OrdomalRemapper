@@ -8,6 +8,3 @@ pluginManagement {
         }
     }
 }
-rootProject.name = "OrdomalRemapper"
-
-include("fabric-mod-test")

@@ -9,6 +9,15 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/fabric-mod-test" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/fabric-mod-test" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/fabric-mod-test" />
           </set>
         </option>
       </GradleProjectSettings>
