@@ -33,7 +33,6 @@ class TsrgReader(
             }
         }
         // each line
-        var lastIndent = 0
         var cls: TsrgTree.ClassImpl? = null
         var mtd: TsrgTree.MethodImpl? = null
         val translator = SignatureTranslator(tree)
@@ -51,8 +50,8 @@ class TsrgReader(
                     }
                     parts.size == 4 && (parts[2].startsWith('p') /* parameter */
                             || parts[2].startsWith('f') /* record field */) -> {
-                        val index = parts[0].toInt()
-                        mtd!!.parameters.add(TsrgTree.ParameterImpl("arg$index", parts[2], null, index, translator))
+                        val argIndex = parts[0].toInt()
+                        mtd!!.parameters.add(TsrgTree.ParameterImpl("arg$argIndex", parts[2], null, argIndex, translator))
                     }
                     else -> throw IllegalArgumentException("Invalid TSRG line: $line (@line $index)")
                 }
