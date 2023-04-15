@@ -32,6 +32,8 @@ class Mojang(
     override val shaUrl: String? = null
     private val metadataUrl = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
     private val clientMapPath = path / ".ordomal" / "mappings" / MOJANG / "mojang-$version.txt"
+    internal val clientPath = path / ".ordomal" / "jars" / MOJANG / "minecraft-$version-client.jar"
+    internal val mappedClientPath = clientPath.resolveSibling("minecraft-${version}-client-mapped")
 
     /**
      * Only loads class mappings
@@ -69,12 +71,14 @@ class Mojang(
             val time: String,
             val releaseTime: String
         )
+
         @Serializable
         class LatestInfo(
             val release: String,
             val snapshot: String
         )
     }
+
     @Serializable
     class VersionFile(
         val downloads: DownloadInfo
@@ -96,23 +100,29 @@ class Mojang(
             )
         }
     }
+
     override fun download() {
         val clientMapExist = clientMapPath.exists()
-        if (!clientMapExist) {
+        val clientExist = clientPath.exists() || mappedClientPath.exists()
+        if (!clientMapExist || !clientExist) {
             LOGGER.info("Downloading mojang mappings for version $version")
-            val metadata = JSON.decodeFromString<MCVersionFile>(httpClient.send(
-                HttpRequest.newBuilder()
-                    .uri(URI.create(metadataUrl))
-                    .build(),
-                HttpResponse.BodyHandlers.ofString()
-            ).body())
+            val metadata = JSON.decodeFromString<MCVersionFile>(
+                httpClient.send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create(metadataUrl))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                ).body()
+            )
             val versionInfo = metadata.versions.first { it.id == version }
-            val versionFile = JSON.decodeFromString<VersionFile>(httpClient.send(
-                HttpRequest.newBuilder()
-                    .uri(URI.create(versionInfo.url))
-                    .build(),
-                HttpResponse.BodyHandlers.ofString()
-            ).body())
+            val versionFile = JSON.decodeFromString<VersionFile>(
+                httpClient.send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create(versionInfo.url))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                ).body()
+            )
             clientMapPath.parent.createDirectories()
             if (!clientMapExist) {
                 LOGGER.info("Downloading client mappings: ${versionFile.downloads.clientMappings.url}")
@@ -122,6 +132,16 @@ class Mojang(
                         .uri(URI.create(versionFile.downloads.clientMappings.url))
                         .build(),
                     HttpResponse.BodyHandlers.ofFile(clientMapPath)
+                ).body()
+            }
+            if (!clientExist) {
+                LOGGER.info("Downloading client jar: ${versionFile.downloads.client.url}")
+                clientPath.createFile()
+                httpClient.send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create(versionFile.downloads.client.url))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofFile(clientPath)
                 ).body()
             }
         }

@@ -2,7 +2,7 @@ package com.github.ordom.remapper.transformer
 
 import com.github.ordom.remapper.CLASS_MAPPED_SEARGE
 import com.github.ordom.remapper.INTERMEDIARY
-import com.github.ordom.remapper.SEARGE
+import com.github.ordom.remapper.OFFICIAL_OBFUSCATED
 import com.github.ordom.remapper.VERSION
 import com.github.ordom.remapper.mapping.IntermediaryToSrg
 import com.github.ordom.remapper.mapping.tsrg.SignatureTranslator
@@ -15,13 +15,11 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.fabricmc.loom.util.TinyRemapperMappingsHelper
-import net.fabricmc.mapping.tree.TinyMappingFactory
 import net.fabricmc.tinyremapper.NonClassCopyMode
 import net.fabricmc.tinyremapper.OutputConsumerPath
 import net.fabricmc.tinyremapper.TinyRemapper
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
-import java.io.File
 import java.nio.file.Path
 import java.util.jar.Attributes
 import java.util.jar.Manifest
@@ -46,12 +44,10 @@ private val JSON = Json {
 }
 
 class BytecodeRemapper(
-    i2s: IntermediaryToSrg
+    private val i2s: IntermediaryToSrg
 ) {
-    init {
-        i2s.merge().dump(File("run/merged.tiny"))
-    }
-    private val mapping = TinyMappingFactory.load(File("run/merged.tiny").inputStream().bufferedReader())
+    private val mappedClientPath = i2s.mojang.mappedClientPath
+    private val mapping = i2s.merge()
     val remapper: TinyRemapper = TinyRemapper.newRemapper()
         .withMappings(TinyRemapperMappingsHelper.create(mapping, INTERMEDIARY, CLASS_MAPPED_SEARGE, false))
         .build()
@@ -62,12 +58,23 @@ class BytecodeRemapper(
         outputPath.createDirectories()
         path.deleteRecursively()
 
+        if (!mappedClientPath.exists()) {
+            val mcRemapper = TinyRemapper.newRemapper()
+                .withMappings(TinyRemapperMappingsHelper.create(i2s.intermediary.load(), OFFICIAL_OBFUSCATED, INTERMEDIARY, false))
+                .build()
+            val mcTag = mcRemapper.createInputTag()
+            mcRemapper.readInputs(i2s.mojang.clientPath)
+            val mcOutput = OutputConsumerPath.Builder(mappedClientPath)
+                .build()
+            mcRemapper.apply(mcOutput, mcTag)
+        }
         val translator = SignatureTranslator(mapping)
         val output = OutputConsumerPath.Builder(path)
             .build()
-        val inputTag = remapper.createInputTag()
-        remapper.readInputs(inputTag, jarFile)
-        remapper.apply(output, inputTag)
+        val moaTag = remapper.createInputTag()
+        remapper.readClassPath(mappedClientPath)
+        remapper.readInputs(moaTag, jarFile)
+        remapper.apply(output, moaTag)
 
         output.addNonClassFiles(jarFile, NonClassCopyMode.FIX_META_INF, remapper)
         val fabricMetadata = FabricMetadata.fromJson(path / "fabric.mod.json")
