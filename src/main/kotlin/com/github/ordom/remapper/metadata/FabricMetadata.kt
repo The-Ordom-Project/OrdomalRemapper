@@ -21,8 +21,12 @@ data class FabricMetadata(
     val name: String,
     val version: String,
     val entrypoints: Map<String, List<FabricEntrypoint>>,
+    val description: String?,
+    val license: String?,
     val mixins: List<String>
 ) {
+
+
     @Serializable
     data class MixinConfig(
         val mixins: List<String> = emptyList(),

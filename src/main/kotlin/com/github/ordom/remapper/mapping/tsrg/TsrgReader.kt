@@ -1,6 +1,6 @@
 package com.github.ordom.remapper.mapping.tsrg
 
-import com.github.ordom.remapper.OFFICIAL_OBSFUCATED
+import com.github.ordom.remapper.OFFICIAL_OBFUSCATED
 import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.VERSION
 import net.fabricmc.mapping.reader.v2.TinyMetadata
@@ -10,7 +10,7 @@ import java.io.BufferedReader
 internal val TSRG2TINY_METADATA: TinyMetadata = object : TinyMetadata {
     override fun getMajorVersion() = 2
     override fun getMinorVersion() = 0
-    override fun getNamespaces() = listOf(OFFICIAL_OBSFUCATED, SEARGE)
+    override fun getNamespaces() = listOf(OFFICIAL_OBFUSCATED, SEARGE)
     override fun getProperties(): MutableMap<String, String?> = mutableMapOf(
         "srg_version" to "tsrg2",
         "ordomal_version" to VERSION
@@ -21,7 +21,7 @@ class TsrgReader(
     private val tsrg: BufferedReader
 ) {
     fun generateTiny(): TsrgTree {
-        val tree = TsrgTree()
+        val tree = TsrgTree(TSRG2TINY_METADATA)
         // init
         run {
             val version = tsrg.untilBlank()
@@ -45,22 +45,22 @@ class TsrgReader(
                 when {
                     parts.size == 1 && parts[0] == "static" -> return@forEachIndexed
                     // TSRG dose not contains a signature for fields, just use null.
-                    parts.size == 3 -> cls!!.fields.add(TsrgTree.FieldImpl(parts[0], parts[1], null, translator))
+                    parts.size == 3 -> cls!!.fields.add(TsrgTree.FieldImpl(arrayOf(parts[0], parts[1]), null, translator))
                     parts.size == 4 && parts[1].startsWith('(') -> {
-                        mtd = TsrgTree.MethodImpl(parts[0], parts[2], parts[1], translator)
+                        mtd = TsrgTree.MethodImpl(arrayOf(parts[0], parts[2]), parts[1], translator)
                         cls!!.methods.add(mtd!!)
                     }
                     parts.size == 4 && (parts[2].startsWith('p') /* parameter */
                             || parts[2].startsWith('f') /* record field */) -> {
                         val argIndex = parts[0].toInt()
-                        mtd!!.parameters.add(TsrgTree.ParameterImpl("arg$argIndex", parts[2], null, argIndex, translator))
+                        mtd!!.parameters.add(TsrgTree.ParameterImpl(arrayOf("arg$argIndex", parts[2]), null, argIndex, translator))
                     }
                     else -> throw IllegalArgumentException("Invalid TSRG line: $line (@line $index)")
                 }
             }
             else {
                 val parts = line.splitBlank()
-                cls = TsrgTree.ClassImpl(parts[0], parts[1])
+                cls = TsrgTree.ClassImpl(arrayOf(parts[0], parts[1]))
                 tree.classes.add(cls!!)
                 tree.map[parts[0]] = cls!!
             }

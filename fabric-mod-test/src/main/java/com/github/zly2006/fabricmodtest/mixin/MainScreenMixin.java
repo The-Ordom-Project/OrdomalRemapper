@@ -17,19 +17,10 @@ public class MainScreenMixin extends Screen {
         super(component);
     }
 
-    static {
-        System.out.println("Hello Fabric, Hello Mixin!");
-        System.out.println("Powered by Ordom.(Should this work?)");
-    }
-
     @Inject(at = @At("HEAD"), method = "init")
     private void init(CallbackInfo info) {
         System.out.println("Hello Fabric, Hello Mixin!");
         System.out.println("Powered by Ordom.");
-
-        this.addRenderableWidget(Button.builder(Component.translatable("menu.quit"), (button) -> {
-            this.minecraft.stop();
-        }).bounds(this.width / 2 + 2, 0, 98, 20).build());
     }
 
     @Inject(at = @At("RETURN"), method = "render")

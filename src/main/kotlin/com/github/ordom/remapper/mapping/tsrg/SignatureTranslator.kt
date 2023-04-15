@@ -12,7 +12,8 @@ class SignatureTranslator(
     private val mapping: TinyTree
 ) {
     val regex = Regex("L([^;]+);")
-    val jvmClassSignature = Regex("(\\[*(L[^;]+;))|([ZCBSIFJDV])")
+    val jvmClassSignature = Regex("(\\[*(L[^;]+;))|[ZCBSIFJDV]")
+    val methodDescriptor = Regex("^\\((\\[*L[^;]+;|[ZCBSIFJDV])*\\)(\\[*L[^;]+;|[ZCBSIFJDV])$")
 
     /**
      * Can only translate class signatures, without check.
@@ -21,12 +22,22 @@ class SignatureTranslator(
         // if this is a method signature, translate the return type and parameters
         mapMethodWithOwner(signature, to)?.let { return it }
 
-        val matches = regex.findAll(signature)
         var ret = signature
-        matches.forEach {
-            val from = it.groupValues[1]
-            val def = mapping.defaultNamespaceClassMap[from] ?: return@forEach // skip non-mapped classes
-            ret = ret.replace(from, def.getName(to))
+        var matches = regex.find(ret)
+        while (matches != null) {
+            val from = matches.groupValues[1]
+            val def = mapping.defaultNamespaceClassMap[from]
+            if (def != null) { // skip non-mapped classes
+                ret = ret.replaceRange(matches.groups[1]!!.range, def.getName(to))
+            } else {
+                if (from.startsWith("net/minecraft/")) {
+                    LOGGER.warn("Found unmapped class in signature: $from")
+                }
+                matches = regex.find(ret, matches.range.first + 1)
+                continue
+            }
+            if (matches.range.last >= ret.length) break
+            matches = regex.find(ret, matches.range.first + 1)
         }
         return ret
     }
@@ -40,21 +51,26 @@ class SignatureTranslator(
         if (ownerMatch.range.first != 0) return null
         val owner = ownerMatch.value
         val ownerQ = owner.drop(1).dropLast(1)
+        if (!signature.contains('(')) {
+            return null
+        }
         val method = signature.substring(owner.length, signature.indexOf('('))
-        val parameters = signature.substring(signature.indexOf('(') + 1, signature.indexOf(')'))
-        val returnType = signature.substring(signature.indexOf(')') + 1)
+        val descriptor = signature.substring(signature.indexOf('('))
+        if (!methodDescriptor.matches(descriptor)) return null
         val ownerDef = mapping.defaultNamespaceClassMap[ownerQ] ?: return null
-        val methodDef = mapping.classes.flatMap { it.methods }.filter {
-            it.getName(defaultNamespace) == method && it.getDescriptor(defaultNamespace) == "($parameters)$returnType"
-        }.let {
+        val methodMapped = ownerDef.methods.asSequence().filter {
+            it.getName(defaultNamespace) == method && it.getDescriptor(defaultNamespace) == descriptor
+        }.map { it.getName(to) }.distinct().toList().let {
             if (it.size == 1) it[0] else {
                 if (it.size > 1) {
                     LOGGER.error("Found multiple methods with the same name and descriptor: $it")
                     error("Found multiple methods with the same name and descriptor: $it")
                 }
-                return null
+                null
             }
-        }
-        return "L${ownerDef.getName(to)};${methodDef.getName(to)}${translate("($parameters)$returnType", to)}"
+        } ?: mapping.classes.asSequence().flatMap { it.methods }.firstOrNull {
+            it.getName(defaultNamespace) == method && it.getDescriptor(defaultNamespace) == descriptor
+        }?.getName(to) // find mapping in all classes
+        return "L${ownerDef.getName(to)};${methodMapped ?: method}${translate(descriptor, to)}"
     }
 }

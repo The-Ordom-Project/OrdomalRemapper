@@ -18,14 +18,15 @@ val httpClient: HttpClient = HttpClient.newHttpClient()
 interface MappingProvider {
     val LOGGER: Logger
     val url: String
-    val shaUrl: String
+    val shaUrl: String?
     val path: Path
     val version: String
     fun check(): Boolean {
+        if (shaUrl == null) return true
         try {
             val sha = httpClient.send(
                 HttpRequest.newBuilder()
-                    .uri(URI.create(shaUrl))
+                    .uri(URI.create(shaUrl!!))
                     .build(),
                 HttpResponse.BodyHandlers.ofString()
             ).body()
