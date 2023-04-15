@@ -4,8 +4,11 @@ import com.github.ordom.remapper.CLASS_MAPPED_SEARGE
 import com.github.ordom.remapper.INTERMEDIARY
 import com.github.ordom.remapper.SEARGE
 import com.github.ordom.remapper.mapping.tsrg.SignatureTranslator
+import com.github.ordom.remapper.mapping.tsrg.TsrgTree
+import net.fabricmc.mapping.tree.TinyMappingFactory
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,7 +23,8 @@ class IntermediaryToSrgTest {
     @Test
     fun merge() {
         val i2s = IntermediaryToSrg(Path.of("run"), "1.19.4")
-        val tree = i2s.merge()
+        i2s.merge().dump(File("run/merged.tiny"))
+        val tree = TinyMappingFactory.load(File("run/merged.tiny").inputStream().bufferedReader())
         val translator = SignatureTranslator(tree)
         assertEquals(
             "Lnet/minecraft/client/gui/screens/Screen;m_7856_()V",
@@ -30,7 +34,7 @@ class IntermediaryToSrgTest {
             val method = tree.classes.randomOrNull()?.methods?.randomOrNull()
             method?.let {
                 val sig = it.getDescriptor(CLASS_MAPPED_SEARGE)
-                if (containsFabricClass(sig)) {
+                if (sig != null && containsFabricClass(sig)) {
                     fail("Found fabric class in remapped method signature: $sig, " +
                             "Method: ${method.getName(INTERMEDIARY)}${method.getDescriptor(INTERMEDIARY)}")
                 }

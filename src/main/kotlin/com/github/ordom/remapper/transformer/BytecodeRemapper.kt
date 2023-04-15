@@ -15,11 +15,13 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.fabricmc.loom.util.TinyRemapperMappingsHelper
+import net.fabricmc.mapping.tree.TinyMappingFactory
 import net.fabricmc.tinyremapper.NonClassCopyMode
 import net.fabricmc.tinyremapper.OutputConsumerPath
 import net.fabricmc.tinyremapper.TinyRemapper
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
+import java.io.File
 import java.nio.file.Path
 import java.util.jar.Attributes
 import java.util.jar.Manifest
@@ -46,7 +48,10 @@ private val JSON = Json {
 class BytecodeRemapper(
     i2s: IntermediaryToSrg
 ) {
-    private val mapping = i2s.merge()
+    init {
+        i2s.merge().dump(File("run/merged.tiny"))
+    }
+    private val mapping = TinyMappingFactory.load(File("run/merged.tiny").inputStream().bufferedReader())
     val remapper: TinyRemapper = TinyRemapper.newRemapper()
         .withMappings(TinyRemapperMappingsHelper.create(mapping, INTERMEDIARY, CLASS_MAPPED_SEARGE, false))
         .build()

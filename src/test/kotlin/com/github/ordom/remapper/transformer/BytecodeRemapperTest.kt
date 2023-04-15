@@ -1,7 +1,9 @@
 package com.github.ordom.remapper.transformer
 
 import com.github.ordom.remapper.mapping.IntermediaryToSrg
+import net.fabricmc.mapping.tree.TinyMappingFactory
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.nio.file.Path
 
 class BytecodeRemapperTest {

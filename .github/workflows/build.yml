@@ -38,5 +38,6 @@ jobs:
           name: Artifacts
           path: |
             build/libs/
+            run/merged.tiny
             run/mods/
             run/out/

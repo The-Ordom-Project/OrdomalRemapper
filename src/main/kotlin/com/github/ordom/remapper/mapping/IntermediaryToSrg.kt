@@ -21,7 +21,7 @@ class IntermediaryToSrg(
 ) {
     constructor(path: Path, version: String): this(Intermediary(path, version), Srg(path, version), Mojang(path, version))
     @Suppress("NAME_SHADOWING")
-    fun merge(): TinyTree {
+    fun merge(): TsrgTree {
         intermediary.download()
         srg.download()
         mojang.download()
@@ -47,7 +47,7 @@ class IntermediaryToSrg(
             )
             it.fields.forEach { field ->
                 val obfuscated = field.getName(OFFICIAL_OBFUSCATED)
-                val descriptor = field.getDescriptor(OFFICIAL_OBFUSCATED)
+                field.getDescriptor(OFFICIAL_OBFUSCATED)
                 val intermediary = field.getName(INTERMEDIARY)
                 val srgFieldDef = srgClassDef.fields.first {
                     // srg has no descriptor for fields, just don't check it
