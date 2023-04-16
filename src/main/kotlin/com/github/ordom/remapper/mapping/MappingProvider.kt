@@ -40,7 +40,7 @@ interface MappingProvider {
             }
             return true
         } catch (e: IOException) {
-            LOGGER.warn("Failed to check intermediary mappings for version $version(${this.javaClass.name}), but ignoring as it may be a network issue", e)
+            LOGGER.warn("Failed to check mappings for version $version(${this.javaClass.name}), but ignoring as it night be a network issue", e)
             return true
         }
     }
@@ -48,11 +48,11 @@ interface MappingProvider {
         try {
             if (path.toFile().exists()) {
                 if (check()) {
-                    LOGGER.info("Intermediary mappings already exist for version $version")
+                    LOGGER.info("Mappings already exist for version $version")
                     return
                 }
             }
-            LOGGER.info("Downloading intermediary mappings for version $version")
+            LOGGER.info("Downloading mappings for version $version")
             path.parent.createDirectories()
             path.createFile()
             httpClient.send(

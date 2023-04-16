@@ -102,6 +102,8 @@ class Mojang(
     }
 
     override fun download() {
+        clientPath.parent.createDirectories()
+        clientMapPath.parent.createDirectories()
         val clientMapExist = clientMapPath.exists()
         val clientExist = clientPath.exists() || mappedClientPath.exists()
         if (!clientMapExist || !clientExist) {

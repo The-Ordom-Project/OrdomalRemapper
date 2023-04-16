@@ -6,5 +6,4 @@ data class ForgeMetadata(
     val description: String,
     val license: String,
     val modid: String,
-) {
-}
+)

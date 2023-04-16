@@ -67,6 +67,7 @@ class BytecodeRemapper(
             val mcOutput = OutputConsumerPath.Builder(mappedClientPath)
                 .build()
             mcRemapper.apply(mcOutput, mcTag)
+            i2s.mojang.clientPath.deleteIfExists()
         }
         val translator = SignatureTranslator(mapping)
         val output = OutputConsumerPath.Builder(path)
@@ -80,13 +81,16 @@ class BytecodeRemapper(
         val fabricMetadata = FabricMetadata.fromJson(path / "fabric.mod.json")
         // remap mixins classes
         fabricMetadata.mixins.asSequence()
-            .map { FabricMetadata.MixinConfig.fromJson(path / it) }
+            .map { FabricMetadata.MixinConfig.fromJson(path / it.config) }
             .map { (path / it.refMap).toFile() }
             .map { it to it.readText() }
             .mapValues { JSON.decodeFromString<FabricRefMap>(it) }
             .mapValues { mapToSrg(it, translator) }
             .mapValues { JSON.encodeToString(it) }
             .forEach { it.first.writeText(it.second) }
+
+        // remove nested jars
+        fabricMetadata.jars.map { path / it.file }.forEach(Path::deleteIfExists)
 
         // generate forge meta
         val forgePackMeta = ForgePackMeta(ForgePackMeta.PackMeta.MC1194) // todo: detect version
@@ -126,7 +130,7 @@ class BytecodeRemapper(
 
         // generate forge mod class
         val asm = ClassWriter(0).apply {
-            val classSig = "ordom/remapped/${forgeMetadata.modid}"
+            val classSig = "ordom/remapped/${forgeMetadata.modid}/${forgeMetadata.modid}"
             visit(61, Opcodes.ACC_PUBLIC, classSig, null, "java/lang/Object", null)
             visitAnnotation("Lnet/minecraftforge/fml/common/Mod;", true).visit("value", forgeMetadata.modid)
             newMethod(classSig, "<init>", "()V", false)
@@ -140,8 +144,8 @@ class BytecodeRemapper(
             }
             visitEnd()
         }
-        (path / "ordom" / "remapped").createDirectories()
-        (path / "ordom" / "remapped" / "${forgeMetadata.modid}.class").writeBytes(asm.toByteArray())
+        (path / "ordom" / "remapped" / forgeMetadata.modid).createDirectories()
+        (path / "ordom" / "remapped" / forgeMetadata.modid / "${forgeMetadata.modid}.class").writeBytes(asm.toByteArray())
 
         // delete fabric meta
         (path / "fabric.mod.json").deleteIfExists()

@@ -14,7 +14,7 @@ class BytecodeRemapperTest {
         remapper.remap(
             outputPath = Path.of("run/out"),
             jarFile = Path.of("run/mods/fabric-mod-test-0.1.jar"),
-            deleteTmp = false
+            deleteTmp = true
         )
     }
 }
